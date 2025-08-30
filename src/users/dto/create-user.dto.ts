@@ -1,6 +1,17 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { Phone } from "../entities/user.entity";
+import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
+
+
+export class PhoneDto {
+    
+    @IsNumber()
+    @IsNotEmpty()
+    number: number;
+
+    @IsNumber()
+    @IsNotEmpty()
+    countryCode: number;
+}
 
 export class CreateUserDto {
 
@@ -14,8 +25,9 @@ export class CreateUserDto {
     email: string;
 
     @IsOptional()
-    @Type(() => Phone)
-    phone: Phone;
+    @ValidateNested()
+    @Type(() => PhoneDto)
+    phone: PhoneDto;
 
     @IsOptional()
     @IsString()

@@ -1,7 +1,7 @@
 import { Collections } from "@app/shared";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { SchemaTypes, Types } from 'mongoose'
+import { SchemaTypes, Types, Document } from 'mongoose'
 
 export type UserDocument = User & Document;
 
@@ -16,9 +16,6 @@ export class Phone {
     @Prop({ type: Number, required: true })
     countryCode: number;
 
-    @ApiPropertyOptional({ type: String })
-    @Prop({ type: String, required: false, unique: true })
-    combinedNumber: string;
 }
 
 @Schema({ collection: Collections.users, timestamps: true })
@@ -33,7 +30,7 @@ export class User {
     name: string;
 
     @ApiProperty({ type: String })
-    @Prop({ required: true, unique: true })
+    @Prop({ type: String, unique: true })
     email: string;
 
     @ApiProperty({ type: Phone })
@@ -47,39 +44,45 @@ export class User {
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-UserSchema.pre<UserDocument>('save', function (next) {
-    if (this.phone?.countryCode && this.phone?.number) {
-        this.phone.combinedNumber = `${this.phone.countryCode}${this.phone.number}`;
-    }
-    next();
+UserSchema.virtual('phone.combinedNumber').get(function (this: User) {
+    return `${this.phone?.countryCode ?? ''}${this.phone?.number ?? ''}`;
 });
+UserSchema.set('toJSON', { virtuals: true });
+UserSchema.set('toObject', { virtuals: true });
 
-UserSchema.pre(['updateOne', 'findOneAndUpdate', 'updateMany'], async function (next) {
-    const update = this.getUpdate() as any;
+// UserSchema.pre<UserDocument>('save', function (next) {
+//     if (this.phone?.countryCode && this.phone?.number) {
+//         this.phone.combinedNumber = `${this.phone.countryCode}${this.phone.number}`;
+//     }
+//     next();
+// });
 
-    if (update.phone?.countryCode || update.phone?.number) {
-        // Attempt to get current phone values from the DB if one of them is missing
-        let countryCode = update.phone?.countryCode;
-        let phoneNumber = update.phone?.number;
+// UserSchema.pre(['updateOne', 'findOneAndUpdate', 'updateMany'], async function (next) {
+//     const update = this.getUpdate() as any;
 
-        if (!countryCode || !phoneNumber) {
-            const query = this.getQuery();
-            const doc = await this.model.findOne(query).lean<User>().exec();
+//     if (update.phone?.countryCode || update.phone?.number) {
+//         // Attempt to get current phone values from the DB if one of them is missing
+//         let countryCode = update.phone?.countryCode;
+//         let phoneNumber = update.phone?.number;
 
-            if (!doc) return next();
+//         if (!countryCode || !phoneNumber) {
+//             const query = this.getQuery();
+//             const doc = await this.model.findOne(query).lean<User>().exec();
 
-            if (!countryCode) {
-                countryCode = doc?.phone?.countryCode;
-            }
-            if (!phoneNumber) {
-                phoneNumber = doc?.phone?.number;
-            }
-        }
+//             if (!doc) return next();
 
-        if (countryCode && phoneNumber) {
-            update.combinedNumber = `${countryCode}${phoneNumber}`;
-            this.setUpdate(update);
-        }
-    }
-    next();
-});
+//             if (!countryCode) {
+//                 countryCode = doc?.phone?.countryCode;
+//             }
+//             if (!phoneNumber) {
+//                 phoneNumber = doc?.phone?.number;
+//             }
+//         }
+
+//         if (countryCode && phoneNumber) {
+//             update.combinedNumber = `${countryCode}${phoneNumber}`;
+//             this.setUpdate(update);
+//         }
+//     }
+//     next();
+// });

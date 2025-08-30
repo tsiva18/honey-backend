@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { HttpException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UsersRepository } from '../repository/users.repository';
@@ -17,6 +17,7 @@ export class UsersService {
       const user = await this.usersRepository.create(createUserDto);
       return user;
     } catch (error) {
+      Logger.error(error);
       throw new InternalServerErrorException('Error creating user');
     }
 
@@ -25,14 +26,12 @@ export class UsersService {
   async findAll(): Promise<User[]> {
     const users = await this.usersRepository.findAll();
     try {
-      if (!users || users.length === 0) {
-        throw new NotFoundException('No users found');
-      }
       return users;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
+      Logger.error(error);
       throw new InternalServerErrorException('Error retrieving users');
     }
   }
@@ -48,6 +47,7 @@ export class UsersService {
       if (error instanceof HttpException) {
         throw error;
       }
+      Logger.error(error);
       throw new InternalServerErrorException('Error retrieving user');
     }
   }
@@ -63,6 +63,7 @@ export class UsersService {
       if (error instanceof HttpException) {
         throw error;
       }
+      Logger.error(error);
       throw new InternalServerErrorException('Error updating user');
     }
   }
@@ -78,6 +79,7 @@ export class UsersService {
       if (error instanceof HttpException) {
         throw error;
       }
+      Logger.error(error);
       throw new InternalServerErrorException('Error removing user');
     }
   }
